@@ -1,0 +1,120 @@
+['ABEV3.SA', 'RAIZ4.SA', 'ELET3.SA', 'GGBR4.SA', 'ITSA4.SA',
+'PETR4.SA', 'RENT3.SA', 'SUZB3.SA', 'VALE3.SA', 'WEGE3.SA']
+
+
+
+```python
+# Código completo para la obtención de los datos históricos de las cotizaciones de la cartera del 01/10/2023 al 01/10/2024
+# Importando la biblioteca
+import yfinance as yf
+import pandas as pd
+import warnings
+
+warnings.filterwarnings('ignore')
+
+# Definiendo la cartera de acciones
+cartera_yf = ['ABEV3.SA', 'RAIZ4.SA', 'ELET3.SA', 'GGBR4.SA', 'ITSA4.SA',
+               'PETR4.SA', 'RENT3.SA', 'SUZB3.SA', 'VALE3.SA', 'WEGE3.SA']
+# Cargando los datos de la cartera
+df = yf.download(cartera_yf, start="2023-10-01", end="2024-10-01")
+
+# Pasando los activos al índice múltiple del df
+cotizaciones = df.stack(level=1)
+
+# Restableciendo los índices y renombrando la columna de los activos
+cotizaciones = cotizaciones.reset_index().rename(columns={'Ticker': 'Activo'})
+
+# Organizando o df
+cotizaciones = cotizaciones[["Date", "Open", "High", "Low", "Close", "Activo"]]
+cotizaciones = pd.DataFrame(cotizaciones)
+cotizaciones['Date'] = pd.to_datetime(cotizaciones['Date'].dt.date,format='%Y-%m-%d')
+
+del cartera, df
+```
+
+
+columnas_pt= ['Setor','Cotacao', 'Min_52_sem', 'Max_52_sem', 'Valor_de_mercado', 'Nro_Acoes', 'Patrim_Liq', 'Receita_Liquida_12m', 'Receita_Liquida_3m', 'Lucro_Liquido_12m', 'Lucro_Liquido_3m']
+
+mapa1 = {'Setor':'Sector',
+                     'Cotacao':'Cotizacion',
+                     'Nro_Acoes':'N_Acciones',
+                     'Patrim_Liq':'Patrim_Neto',
+                     'Receita_Liquida_12m':'Ingresos_Netos_12m',
+                     'Receita_Liquida_3m':'Ingresos_Netos_3m',
+                     'Lucro_Liquido_12m':'Beneficio_Neto_12m',
+                     'Lucro_Liquido_3m':'Beneficio_Neto_3m'}
+
+sectores = {'Petróleo, Gás e Biocombustíveis':'Petróleo, Gas y Biocombustibles', 
+ 'Energia Elétrica':'Energía Eléctrica',
+ 'Siderurgia e Metalurgia':'Siderúrgica y Metalúrgica', 
+ 'Intermediários Financeiros':'Intermediarios Financieros', 
+ 'Madeira e Papel':'Madera y Papel', 
+ 'Mineração':'Minería', 
+ 'Máquinas e Equipamentos':'Maquinaria y Equipos'}
+
+
+
+columnas = ['Cotizacion', 'Min_52_sem', 'Max_52_sem', 'Valor_de_mercado',
+            'N_Acciones', 'Patrim_Neto', 'Ingresos_Netos_12m', 'Ingresos_Netos_3m','Beneficio_Neto_12m', 'Beneficio_Neto_3m']
+
+```python
+# Importando las bibliotecas
+import fundamentus
+import pandas as pd
+import warnings
+
+warnings.filterwarnings('ignore')
+
+# Definiendo la cartera de acciones
+cartera_fund = ["ABEV3", "RAIZ4", "ELET3", "GGBR4", "ITSA4",
+                 "PETR4", "RENT3", "SUZB3", "VALE3", "WEGE3"]
+
+columnas_pt= ['Cotacao', 'Min_52_sem', 'Max_52_sem', 'Valor_de_mercado', 
+              'Nro_Acoes', 'Patrim_Liq', 'Receita_Liquida_12m', 
+              'Receita_Liquida_3m', 'Lucro_Liquido_12m', 'Lucro_Liquido_3m']
+
+
+# Creando un df con algunas informaciones de la cartera
+ind = fundamentus.get_papel(cartera_fund)[['Cotacao', 'Min_52_sem', 'Max_52_sem', 'Valor_de_mercado', 
+                                           'Nro_Acoes', 'Patrim_Liq', 'Receita_Liquida_12m', 
+                                           'Receita_Liquida_3m', 'Lucro_Liquido_12m', 'Lucro_Liquido_3m']]
+
+ind.rename(columns ={'Setor':'Sector',
+                     'Cotacao':'Cotizacion',
+                     'Nro_Acoes':'N_Acciones',
+                     'Patrim_Liq':'Patrim_Neto',
+                     'Receita_Liquida_12m':'Ingresos_Netos_12m',
+                     'Receita_Liquida_3m':'Ingresos_Netos_3m',
+                     'Lucro_Liquido_12m':'Beneficio_Neto_12m',
+                     'Lucro_Liquido_3m':'Beneficio_Neto_3m'},
+                     inplace=True)
+
+# Pasando el ticker a una columna
+ind = ind.reset_index()
+ind.rename(columns = {'index':'Activo'}, inplace=True)
+
+# Cambiando columnas de tipo objeto a
+columnas = ['Cotizacion', 'Min_52_sem', 'Max_52_sem', 'Valor_de_mercado',
+            'N_Acciones', 'Patrim_Neto', 'Ingresos_Netos_12m', 'Ingresos_Netos_3m',
+            'Beneficio_Neto_12m', 'Beneficio_Neto_3m']
+ind[columnas] = ind[columnas].apply(pd.to_numeric, errors='coerce', axis=1)
+
+# Creando un nuevo df con algunos indicadores de la cartera
+
+ind_2 = fundamentus.get_resultado_raw().reset_index()
+ind_2 = ind_2.query("papel in @cartera_fund")
+ind_2 = ind_2[['papel','P/L', 'Div.Yield','P/VP','ROE']].reset_index(drop=True)
+ind_2.rename(columns={'papel': 'Activo','Div.Yield':'DY','P/L':'PER'}, inplace= True)
+
+# Concatenando los DataFrames en uno solo con la información y los indicadores
+indicadores = pd.merge(ind, ind_2, on='Activo')
+
+# Creando una columna para LPA (Lucro por Acción) y VPA (Valor Patrimonial por Acción)
+# Para calcular la fórmula de Graham: Valor intrínseco de una acción (VI = √22,5 x LPA x VPA)
+
+indicadores["LPA"] = (indicadores["Beneficio_Neto_12m"] / indicadores ["N_Acciones"]).round(2)
+indicadores["VPA"] = (indicadores["Patrim_Neto"] / indicadores ["N_Acciones"]).round(2)
+
+del ind, ind_2, cartera_fund, columnas
+```
+
